@@ -6,4 +6,4 @@ matplotlib>=3.8.0
 geopandas>=0.14.0
 notebook>=7.0.0
 streamlit
-streamlit_folium
+streamlit-folium
