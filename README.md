@@ -33,7 +33,7 @@ windhoek-traffic/
 
 ```bash
 # 1. Clone and set up environment
-git clone https://github.com/alexmoyo/windhoek-traffic.git
+git clone https://github.com/Genuine17/Genuine17.git
 cd windhoek-traffic
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
@@ -80,5 +80,5 @@ Replace `simulate_gps_observations()` in `src/pipeline.py` with a loader for you
 
 ## Author
 
-Alexander K. Moyo — BSc Informatics, University of Namibia  
-[github.com/alexmoyo](https://github.com/alexmoyo) · [linkedin.com/in/alexmoyo](https://linkedin.com/in/alexmoyo)
+**Phillann G.T Shitaleni** — BSc Informatics, Namibia University of Science and Technology  
+[github.com/Genuine17](https://github.com/Genuine17/Genuine17)
