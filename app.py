@@ -33,17 +33,20 @@ st.markdown("""
 <style>
     /* ── Global background & text ── */
     .stApp {
-        background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 40%, #3d1f3f 70%, #5c2d1e 100%);
-        color: #f0e6d3;
+        background-color: #0d0d0d;
+        background-image:
+            radial-gradient(ellipse at top left, rgba(255,107,53,0.08) 0%, transparent 55%),
+            radial-gradient(ellipse at bottom right, rgba(192,57,43,0.07) 0%, transparent 55%);
+        color: #e8e0d5;
     }
 
     /* ── Sidebar ── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1f0d35 0%, #2a1040 100%);
-        border-right: 1px solid #ff6b35;
+        background-color: #111111;
+        border-right: 2px solid #ff6b35;
     }
     [data-testid="stSidebar"] * {
-        color: #f0e6d3 !important;
+        color: #e8e0d5 !important;
     }
     [data-testid="stSidebar"] .stSlider > div > div > div {
         background: #ff6b35 !important;
@@ -55,7 +58,7 @@ st.markdown("""
         padding: 22px 32px;
         border-radius: 12px;
         margin-bottom: 24px;
-        box-shadow: 0 4px 20px rgba(255, 107, 53, 0.35);
+        box-shadow: 0 4px 24px rgba(255, 107, 53, 0.4);
     }
     .dashboard-header h1 {
         color: #ffffff !important;
@@ -73,39 +76,40 @@ st.markdown("""
 
     /* ── Section subheaders ── */
     h2, h3, .stSubheader {
-        color: #ff9a6c !important;
-        border-bottom: 2px solid #c0392b;
+        color: #ff6b35 !important;
+        border-bottom: 2px solid rgba(255, 107, 53, 0.3);
         padding-bottom: 4px;
     }
 
-    /* ── Metric cards ── */
+    /* ── Metric cards — white/light on dark ── */
     [data-testid="stMetric"] {
-        background: linear-gradient(135deg, rgba(255,107,53,0.12) 0%, rgba(155,89,182,0.12) 100%);
-        border: 1px solid rgba(255, 107, 53, 0.35);
+        background: #ffffff;
+        border: none;
         border-left: 4px solid #ff6b35;
         border-radius: 10px;
         padding: 14px 18px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-        transition: transform 0.15s ease;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     [data-testid="stMetric"]:hover {
         transform: translateY(-2px);
-        border-left-color: #9b59b6;
-        box-shadow: 0 4px 18px rgba(255, 107, 53, 0.25);
+        border-left-color: #c0392b;
+        box-shadow: 0 6px 22px rgba(255, 107, 53, 0.3);
     }
     [data-testid="stMetricLabel"] {
-        color: #ffb899 !important;
-        font-weight: 600;
-        font-size: 0.8rem;
+        color: #555555 !important;
+        font-weight: 700;
+        font-size: 0.78rem;
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.7px;
     }
     [data-testid="stMetricValue"] {
-        color: #ffffff !important;
-        font-weight: 700;
+        color: #111111 !important;
+        font-weight: 800;
     }
     [data-testid="stMetricDelta"] {
-        color: #ffb347 !important;
+        color: #e84118 !important;
+        font-weight: 600;
     }
 
     /* ── Primary button ── */
