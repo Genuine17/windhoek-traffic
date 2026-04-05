@@ -128,19 +128,28 @@ st.markdown("""
   [data-testid="stMetricLabel"] {
       color: #4a6580 !important;
       font-weight: 700;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.7px;
+      letter-spacing: 0.5px;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      line-height: 1.3;
       transition: color 0.3s ease;
   }
   [data-testid="stMetricValue"] {
       color: #071e34 !important;
       font-weight: 800;
+      font-size: clamp(1rem, 2vw, 1.6rem);
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
       transition: color 0.3s ease;
   }
   [data-testid="stMetricDelta"] {
       color: #0e7490 !important;
       font-weight: 600;
+      font-size: 0.78rem;
       transition: color 0.3s ease;
   }
 
@@ -319,7 +328,7 @@ if edges is not None:
     total  = len(edges)
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("Total segments", f"{total:,}")
+    c1.metric("Segments", f"{total:,}")
     c2.metric("🟢 Free flow",   f"{counts.get('Free flow', 0):,}",
               f"{100*counts.get('Free flow',0)/total:.1f}%")
     c3.metric("🟡 Light",       f"{counts.get('Light', 0):,}",
