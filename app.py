@@ -160,6 +160,25 @@ st.markdown("""
         border-top-color: #ff6b35 !important;
     }
 
+    /* ── Number input & sidebar form inputs ── */
+    [data-testid="stSidebar"] input[type="number"],
+    [data-testid="stSidebar"] input[type="text"],
+    [data-testid="stSidebar"] .stNumberInput input {
+        background-color: #1e1e1e !important;
+        color: #e8e0d5 !important;
+        border: 1px solid #ff6b35 !important;
+        border-radius: 6px !important;
+    }
+    [data-testid="stSidebar"] .stNumberInput button {
+        background-color: #1e1e1e !important;
+        color: #ff6b35 !important;
+        border: 1px solid #ff6b35 !important;
+    }
+    [data-testid="stSidebar"] .stNumberInput button:hover {
+        background-color: #ff6b35 !important;
+        color: #ffffff !important;
+    }
+
     /* ── Severity label classes ── */
     .severity-free   { color: #2ecc71; font-weight: 600; }
     .severity-light  { color: #f39c12; font-weight: 600; }
