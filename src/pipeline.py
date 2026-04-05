@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import folium
 import json
+import streamlit as st
 from pathlib import Path
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 
 # ── Step 1: Fetch road network from OSM ──────────────────────────────────────
+@st.cache_data(show_spinner=False)
 def fetch_road_network(city: str = CITY):
     """Download drivable road network for Windhoek via OSMnx."""
     print(f"[1/4] Fetching road network for {city}...")
@@ -37,6 +39,7 @@ def fetch_road_network(city: str = CITY):
 
 
 # ── Step 2: Simulate peak-hour GPS speed observations ────────────────────────
+@st.cache_data(show_spinner=False)
 def simulate_gps_observations(gdf_edges: pd.DataFrame, seed: int = RANDOM_SEED):
     """
     Simulate observed speeds for AM peak (07:00–09:00) and PM peak (16:00–18:00).
@@ -83,6 +86,7 @@ def simulate_gps_observations(gdf_edges: pd.DataFrame, seed: int = RANDOM_SEED):
 
 
 # ── Step 3: Compute congestion score ─────────────────────────────────────────
+@st.cache_data(show_spinner=False)
 def compute_congestion(edges: pd.DataFrame):
     """
     Congestion score = 1 - (observed_speed / free_flow_speed).
@@ -117,15 +121,15 @@ def build_map(edges: pd.DataFrame):
     print("[4/4] Building interactive map...")
 
     COLOR_MAP = {
-        "Free flow": "#2ecc71",
-        "Light":     "#f1c40f",
-        "Moderate":  "#e67e22",
-        "Heavy":     "#e74c3c",
-        "Severe":    "#8e44ad",
+        "Free flow": "#22c55e",
+        "Light":     "#facc15",
+        "Moderate":  "#f97316",
+        "Heavy":     "#ef4444",
+        "Severe":    "#a855f7",
     }
 
     # Centre on Windhoek CBD
-    m = folium.Map(location=[-22.5597, 17.0832], zoom_start=13, tiles="CartoDB positron")
+    m = folium.Map(location=[-22.5597, 17.0832], zoom_start=13, tiles="CartoDB dark_matter")
 
     # Add road segments
     for _, row in edges.iterrows():
@@ -134,7 +138,7 @@ def build_map(edges: pd.DataFrame):
             continue
         coords = [(lat, lon) for lon, lat in geom.coords]
         severity = str(row.get("severity", "Free flow"))
-        color = COLOR_MAP.get(severity, "#95a5a6")
+        color = COLOR_MAP.get(severity, "#94a3b8")
 
         road_name = str(row.get("name", "Unnamed road"))
         popup_html = f"""
@@ -158,14 +162,15 @@ def build_map(edges: pd.DataFrame):
     # Legend
     legend_html = """
     <div style="position:fixed; bottom:30px; left:30px; z-index:1000;
-                background:white; padding:12px 16px; border-radius:8px;
-                border:1px solid #ccc; font-family:Arial; font-size:13px;">
-        <b>Congestion Level</b><br>
-        <span style='color:#2ecc71'>&#9644;</span> Free flow<br>
-        <span style='color:#f1c40f'>&#9644;</span> Light<br>
-        <span style='color:#e67e22'>&#9644;</span> Moderate<br>
-        <span style='color:#e74c3c'>&#9644;</span> Heavy<br>
-        <span style='color:#8e44ad'>&#9644;</span> Severe
+                background:#071e34; padding:12px 16px; border-radius:8px;
+                border:1px solid #0e7490; font-family:Arial; font-size:13px;
+                color:#e2f0f9;">
+        <b style="color:#06b6d4;">Congestion Level</b><br>
+        <span style='color:#22c55e'>&#9644;</span> Free flow<br>
+        <span style='color:#facc15'>&#9644;</span> Light<br>
+        <span style='color:#f97316'>&#9644;</span> Moderate<br>
+        <span style='color:#ef4444'>&#9644;</span> Heavy<br>
+        <span style='color:#a855f7'>&#9644;</span> Severe
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
