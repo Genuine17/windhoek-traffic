@@ -39,7 +39,7 @@ def fetch_road_network(city: str = CITY):
 
 
 # ── Step 2: Simulate peak-hour GPS speed observations ────────────────────────
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, hash_funcs={"geopandas.geodataframe.GeoDataFrame": lambda _: None, "pandas.core.frame.DataFrame": lambda _: None})
 def simulate_gps_observations(gdf_edges: pd.DataFrame, seed: int = RANDOM_SEED):
     """
     Simulate observed speeds for AM peak (07:00–09:00) and PM peak (16:00–18:00).
@@ -86,7 +86,7 @@ def simulate_gps_observations(gdf_edges: pd.DataFrame, seed: int = RANDOM_SEED):
 
 
 # ── Step 3: Compute congestion score ─────────────────────────────────────────
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, hash_funcs={"geopandas.geodataframe.GeoDataFrame": lambda _: None, "pandas.core.frame.DataFrame": lambda _: None})
 def compute_congestion(edges: pd.DataFrame):
     """
     Congestion score = 1 - (observed_speed / free_flow_speed).
