@@ -2,16 +2,7 @@
 Windhoek Traffic Congestion Dashboard
 ======================================
 Streamlit app that wraps the analysis pipeline with an interactive UI.
-Theme: Enterprise Blue — Professional / Corporate (Grafana/Looker-inspired)
-Palette:
-  Background : #f0f4f8  (cool off-white)
-  Sidebar    : #1e2a3a  (deep slate navy)
-  Primary    : #2563eb  (electric blue)
-  Hover      : #1d4ed8  (deep blue)
-  Card       : #ffffff  (white)
-  Border     : #3b82f6  (steel blue)
-  Text-main  : #0f172a  (near-black)
-  Text-muted : #64748b  (slate grey)
+Theme: Warm Earth & Brown — Natural / Grounded
 """
 
 import streamlit as st
@@ -21,6 +12,8 @@ import folium
 from streamlit_folium import st_folium
 from pathlib import Path
 import sys
+import hashlib
+import requests
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 from pipeline import (
@@ -37,94 +30,97 @@ st.set_page_config(
     layout="wide",
 )
 
+# ── Design tokens ─────────────────────────────────────────────────────────────
+# Primary:  #2c1a0e  (deep espresso)
+# Accent:   #8b5e3c  (warm brown)
+# Accent 2: #c49a6c  (sand/caramel)
+# Surface:  #3d2310  (card/panel)
+# Text:     #f5e6d3  (warm cream)
+
 st.markdown("""
 <style>
-  /* ── Global background & typography ── */
+  /* ── Viewport meta for mobile ── */
+  @viewport { width=device-width; initial-scale=1; }
+
+  /* ── Global ── */
   .stApp {
-      background-color: #f0f4f8;
-      color: #0f172a;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: #1a0f07;
+      background-image:
+          radial-gradient(ellipse at 20% 20%, rgba(196,154,108,0.07) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 80%, rgba(139,94,60,0.06) 0%, transparent 50%);
+      color: #f5e6d3;
+      font-family: 'Segoe UI', system-ui, sans-serif;
   }
 
   /* ── Sidebar ── */
   [data-testid="stSidebar"] {
-      background-color: #1e2a3a;
-      border-right: 3px solid #2563eb;
+      background-color: #1f0f05;
+      border-right: 2px solid #8b5e3c;
   }
-  [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
-  [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-      color: #93c5fd !important;
-      border-bottom: 1px solid rgba(59,130,246,0.3) !important;
-      padding-bottom: 4px;
-  }
+  [data-testid="stSidebar"] * { color: #e8d0b0 !important; }
   [data-testid="stSidebar"] .stSlider > div > div > div {
-      background: #2563eb !important;
+      background: #c49a6c !important;
   }
   [data-testid="stSidebar"] input[type="number"],
   [data-testid="stSidebar"] .stNumberInput input {
-      background-color: #263548 !important;
-      color: #e2e8f0 !important;
-      border: 1px solid #2563eb !important;
+      background-color: #2c1a0e !important;
+      color: #f5e6d3 !important;
+      border: 1px solid #8b5e3c !important;
       border-radius: 6px !important;
   }
   [data-testid="stSidebar"] .stNumberInput button {
-      background-color: #263548 !important;
-      color: #93c5fd !important;
-      border: 1px solid #2563eb !important;
+      background-color: #2c1a0e !important;
+      color: #c49a6c !important;
+      border: 1px solid #8b5e3c !important;
   }
   [data-testid="stSidebar"] .stNumberInput button:hover {
-      background-color: #2563eb !important;
+      background-color: #8b5e3c !important;
       color: #ffffff !important;
   }
-  [data-testid="stSidebar"] hr {
-      border-color: rgba(59,130,246,0.25) !important;
-  }
 
-  /* ── Dashboard header banner ── */
+  /* ── Header banner ── */
   .dashboard-header {
-      background: linear-gradient(90deg, #1e2a3a 0%, #1d4ed8 50%, #2563eb 100%);
-      padding: 26px 36px;
+      background: linear-gradient(90deg, #2c1a0e 0%, #8b5e3c 50%, #c49a6c 100%);
+      padding: 24px 36px;
       border-radius: 14px;
       margin-bottom: 28px;
-      box-shadow: 0 4px 24px rgba(37,99,235,0.25);
-      border: 1px solid rgba(59,130,246,0.3);
+      box-shadow: 0 4px 28px rgba(196,154,108,0.25);
+      border: 1px solid rgba(196,154,108,0.2);
   }
   .dashboard-header h1 {
       color: #ffffff !important;
       font-size: 2rem;
       font-weight: 700;
       margin: 0;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.4px;
   }
   .dashboard-header p {
-      color: #bfdbfe !important;
-      font-size: 0.94rem;
-      margin: 8px 0 0 0;
+      color: #f0d9bc !important;
+      font-size: 0.93rem;
+      margin: 7px 0 0 0;
   }
 
-  /* ── Section subheaders ── */
+  /* ── Subheaders ── */
   h2, h3 {
-      color: #1d4ed8 !important;
-      border-bottom: 2px solid rgba(37,99,235,0.15);
+      color: #c49a6c !important;
+      border-bottom: 2px solid rgba(196,154,108,0.25);
       padding-bottom: 5px;
   }
 
-  /* ── Metric cards — white, electric blue accent, smooth fill hover ── */
+  /* ── Metric cards ── */
   [data-testid="stMetric"] {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-top: 4px solid #2563eb;
+      background: #f5efe8;
+      border: none;
+      border-left: 4px solid #8b5e3c;
       border-radius: 10px;
       padding: 16px 18px;
-      box-shadow: 0 1px 8px rgba(15,23,42,0.08);
-      transition: background 0.3s ease, border-top-color 0.3s ease,
-                  box-shadow 0.3s ease;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.35);
+      transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
       cursor: default;
   }
   [data-testid="stMetric"]:hover {
-      background: #2563eb;
-      border-top-color: #1d4ed8;
-      box-shadow: 0 6px 24px rgba(37,99,235,0.35);
+      background: #8b5e3c;
+      box-shadow: 0 6px 24px rgba(139,94,60,0.45);
   }
   [data-testid="stMetric"]:hover [data-testid="stMetricLabel"],
   [data-testid="stMetric"]:hover [data-testid="stMetricValue"],
@@ -132,11 +128,11 @@ st.markdown("""
       color: #ffffff !important;
   }
   [data-testid="stMetricLabel"] {
-      color: #64748b !important;
+      color: #6b4226 !important;
       font-weight: 700;
       font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
       white-space: normal !important;
       overflow: visible !important;
       text-overflow: unset !important;
@@ -144,16 +140,16 @@ st.markdown("""
       transition: color 0.3s ease;
   }
   [data-testid="stMetricValue"] {
-      color: #0f172a !important;
+      color: #2c1a0e !important;
       font-weight: 800;
-      font-size: clamp(1rem, 2vw, 1.55rem);
+      font-size: clamp(1rem, 2vw, 1.6rem);
       white-space: normal !important;
       overflow: visible !important;
       text-overflow: unset !important;
       transition: color 0.3s ease;
   }
   [data-testid="stMetricDelta"] {
-      color: #2563eb !important;
+      color: #8b5e3c !important;
       font-weight: 600;
       font-size: 0.78rem;
       transition: color 0.3s ease;
@@ -161,116 +157,131 @@ st.markdown("""
 
   /* ── Primary button ── */
   .stButton > button[kind="primary"] {
-      background: linear-gradient(90deg, #1d4ed8, #2563eb) !important;
+      background: linear-gradient(90deg, #2c1a0e, #8b5e3c) !important;
       color: #ffffff !important;
-      border: none !important;
+      border: 1px solid #c49a6c !important;
       border-radius: 8px !important;
       font-weight: 700 !important;
-      letter-spacing: 0.4px;
-      box-shadow: 0 3px 12px rgba(37,99,235,0.35);
+      letter-spacing: 0.5px;
+      box-shadow: 0 3px 14px rgba(196,154,108,0.3);
       transition: all 0.25s ease;
   }
   .stButton > button[kind="primary"]:hover {
-      background: linear-gradient(90deg, #1e40af, #1d4ed8) !important;
-      box-shadow: 0 5px 18px rgba(37,99,235,0.5);
+      background: linear-gradient(90deg, #8b5e3c, #c49a6c) !important;
+      box-shadow: 0 5px 20px rgba(196,154,108,0.5);
       transform: translateY(-1px);
   }
 
+  /* ── Secondary button ── */
+  .stButton > button[kind="secondary"] {
+      background: transparent !important;
+      color: #c49a6c !important;
+      border: 1px solid #8b5e3c !important;
+      border-radius: 8px !important;
+  }
+  .stButton > button[kind="secondary"]:hover {
+      background: rgba(139,94,60,0.15) !important;
+  }
+
   /* ── Divider ── */
-  hr { border-color: rgba(37,99,235,0.12) !important; }
+  hr { border-color: rgba(196,154,108,0.2) !important; }
 
   /* ── Expander ── */
   [data-testid="stExpander"] {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
+      background: rgba(196,154,108,0.05);
+      border: 1px solid rgba(196,154,108,0.2);
       border-radius: 10px;
-      box-shadow: 0 1px 6px rgba(15,23,42,0.06);
   }
 
   /* ── Dataframe ── */
   [data-testid="stDataFrame"] {
-      border: 1px solid #e2e8f0 !important;
+      border: 1px solid rgba(196,154,108,0.25) !important;
       border-radius: 8px !important;
-      box-shadow: 0 1px 6px rgba(15,23,42,0.06) !important;
   }
 
   /* ── Alert / info / success ── */
   [data-testid="stAlert"] {
-      background: #eff6ff !important;
-      border-left: 4px solid #2563eb !important;
-      color: #1e3a5f !important;
+      background: rgba(139,94,60,0.15) !important;
+      border-left: 4px solid #c49a6c !important;
+      color: #f5e6d3 !important;
       border-radius: 8px;
   }
 
   /* ── Spinner ── */
-  .stSpinner > div { border-top-color: #2563eb !important; }
+  .stSpinner > div { border-top-color: #c49a6c !important; }
 
-  /* ── Welcome banner ── */
-  .welcome-banner {
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      border: 1px solid rgba(37,99,235,0.2);
-      border-left: 5px solid #2563eb;
-      border-radius: 14px;
-      padding: 28px 36px;
-      margin-bottom: 28px;
+  /* ── Search box styling ── */
+  .search-container {
+      background: #2c1a0e;
+      border: 1px solid #8b5e3c;
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 16px;
   }
-  .welcome-banner h2 {
-      color: #1d4ed8 !important;
+  .search-container h4 {
+      color: #c49a6c !important;
       border: none !important;
-      margin-bottom: 8px;
+      padding: 0 !important;
+      margin: 0 0 10px 0;
+      font-size: 1rem;
   }
-  .welcome-banner p { color: #334155; font-size: 1.02rem; margin: 0; }
 
-  /* ── Responsive flexbox fact cards ── */
+  /* ── Fact grid ── */
   .fact-grid {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
   }
   .fact-card {
       flex: 1 1 260px;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-top: 4px solid #2563eb;
+      background: #2c1a0e;
+      border: 1px solid rgba(196,154,108,0.2);
+      border-top: 3px solid #8b5e3c;
       border-radius: 12px;
-      padding: 22px 24px;
+      padding: 20px 22px;
       box-sizing: border-box;
-      box-shadow: 0 1px 8px rgba(15,23,42,0.07);
-      transition: background 0.3s ease, border-top-color 0.3s ease,
-                  box-shadow 0.3s ease, transform 0.2s ease;
+      transition: background 0.3s ease, border-top-color 0.3s ease, box-shadow 0.3s ease;
   }
   .fact-card:hover {
-      background: #2563eb;
-      border-top-color: #1d4ed8;
-      box-shadow: 0 8px 28px rgba(37,99,235,0.3);
-      transform: translateY(-3px);
+      background: #8b5e3c;
+      border-top-color: #c49a6c;
+      box-shadow: 0 8px 28px rgba(196,154,108,0.3);
   }
-  .fact-card:hover .fact-label,
-  .fact-card:hover .fact-value,
-  .fact-card:hover .fact-desc { color: #ffffff !important; opacity: 1; }
+  .fact-card:hover .fact-label { color: #f5e6d3 !important; }
+  .fact-card:hover .fact-value { color: #ffffff !important; }
+  .fact-card:hover .fact-desc  { color: #fde8c8 !important; opacity: 1; }
   .fact-icon  { font-size: 2rem; margin-bottom: 10px; }
-  .fact-label {
-      color: #2563eb;
-      font-weight: 700;
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      margin-bottom: 4px;
-      transition: color 0.3s ease;
+  .fact-label { color: #c49a6c; font-weight: 700; font-size: 0.88rem;
+                text-transform: uppercase; letter-spacing: 0.6px;
+                margin-bottom: 4px; transition: color 0.3s ease; }
+  .fact-value { color: #ffffff; font-size: 1.65rem; font-weight: 800;
+                margin-bottom: 6px; transition: color 0.3s ease; }
+  .fact-desc  { color: #b89070; font-size: 0.84rem; line-height: 1.5;
+                opacity: 0.85; transition: color 0.3s ease, opacity 0.3s ease; }
+
+  /* ── Welcome banner ── */
+  .welcome-banner {
+      background: linear-gradient(135deg, rgba(196,154,108,0.1), rgba(139,94,60,0.1));
+      border: 1px solid rgba(196,154,108,0.25);
+      border-radius: 14px;
+      padding: 28px 36px;
+      margin-bottom: 28px;
+      text-align: center;
   }
-  .fact-value {
-      color: #0f172a;
-      font-size: 1.65rem;
-      font-weight: 800;
-      margin-bottom: 6px;
-      transition: color 0.3s ease;
-  }
-  .fact-desc {
-      color: #64748b;
-      font-size: 0.84rem;
-      line-height: 1.55;
-      transition: color 0.3s ease, opacity 0.3s ease;
+  .welcome-banner h2 { color: #c49a6c !important; border: none !important; }
+  .welcome-banner p  { color: #d4b896; font-size: 1.05rem; margin-top: 8px; }
+
+  /* ── Search result chip ── */
+  .search-result-chip {
+      display: inline-block;
+      background: rgba(139,94,60,0.2);
+      border: 1px solid #8b5e3c;
+      border-radius: 20px;
+      padding: 4px 14px;
+      color: #c49a6c;
+      font-size: 0.82rem;
+      margin: 4px 4px 4px 0;
   }
 
   /* ── Mobile breakpoint ── */
@@ -281,11 +292,11 @@ st.markdown("""
   }
 
   /* ── Severity label classes ── */
-  .severity-free   { color: #16a34a; font-weight: 600; }
-  .severity-light  { color: #ca8a04; font-weight: 600; }
-  .severity-mod    { color: #ea580c; font-weight: 600; }
-  .severity-heavy  { color: #dc2626; font-weight: 600; }
-  .severity-severe { color: #9333ea; font-weight: 600; }
+  .severity-free   { color: #22c55e; font-weight: 600; }
+  .severity-light  { color: #facc15; font-weight: 600; }
+  .severity-mod    { color: #f97316; font-weight: 600; }
+  .severity-heavy  { color: #ef4444; font-weight: 600; }
+  .severity-severe { color: #a855f7; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -299,6 +310,57 @@ def flatten_list_columns(df: pd.DataFrame) -> pd.DataFrame:
                 lambda x: ", ".join(map(str, x)) if isinstance(x, list) else x
             )
     return df
+
+
+def _hash_geodataframe(gdf):
+    """Deterministic hash for a GeoDataFrame so st.cache_data can key on it."""
+    h = hashlib.md5()
+    h.update(str(gdf.shape).encode())
+    try:
+        h.update(gdf.geometry.to_wkt().str.cat().encode())
+    except Exception:
+        h.update(str(gdf.index.tolist()).encode())
+    return h.hexdigest()
+
+
+# ── Cache fix: wrap simulate_gps_observations with a hashable signature ───────
+@st.cache_data(
+    hash_funcs={"geopandas.geodataframe.GeoDataFrame": _hash_geodataframe}
+)
+def cached_simulate(edges, seed: int):
+    return simulate_gps_observations(edges, seed=seed)
+
+
+# ── Nominatim geocoding helper ────────────────────────────────────────────────
+@st.cache_data(ttl=3600)
+def geocode_location(query: str):
+    """
+    Search Windhoek for a suburb/area using Nominatim.
+    Returns list of dicts with name, lat, lon.
+    """
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {
+            "q": f"{query}, Windhoek, Namibia",
+            "format": "json",
+            "limit": 5,
+            "addressdetails": 1,
+        }
+        headers = {"User-Agent": "WindhoekTrafficDashboard/1.0"}
+        r = requests.get(url, params=params, headers=headers, timeout=6)
+        results = r.json()
+        return [
+            {
+                "name": res.get("display_name", "").split(",")[0],
+                "full": res.get("display_name", ""),
+                "lat": float(res["lat"]),
+                "lon": float(res["lon"]),
+            }
+            for res in results
+        ]
+    except Exception:
+        return []
+
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -335,13 +397,19 @@ with st.sidebar:
 # ── State ─────────────────────────────────────────────────────────────────────
 if "edges" not in st.session_state:
     st.session_state.edges = None
+if "map_center" not in st.session_state:
+    st.session_state.map_center = [-22.5597, 17.0832]
+if "map_zoom" not in st.session_state:
+    st.session_state.map_zoom = 13
+if "search_query" not in st.session_state:
+    st.session_state.search_query = ""
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 if run:
     with st.spinner("Fetching road network from OpenStreetMap..."):
         edges = fetch_road_network()
     with st.spinner("Simulating peak-hour speeds..."):
-        edges = simulate_gps_observations(edges, seed=int(seed))
+        edges = cached_simulate(edges, seed=int(seed))          # ← cache fix
     with st.spinner("Computing congestion scores..."):
         edges = compute_congestion(edges)
     st.session_state.edges = edges
@@ -358,16 +426,16 @@ if edges is not None:
     total  = len(edges)
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("Segments",    f"{total:,}")
-    c2.metric("🟢 Free flow", f"{counts.get('Free flow', 0):,}",
+    c1.metric("Segments", f"{total:,}")
+    c2.metric("🟢 Free flow",   f"{counts.get('Free flow', 0):,}",
               f"{100*counts.get('Free flow',0)/total:.1f}%")
-    c3.metric("🟡 Light",     f"{counts.get('Light', 0):,}",
+    c3.metric("🟡 Light",       f"{counts.get('Light', 0):,}",
               f"{100*counts.get('Light',0)/total:.1f}%")
-    c4.metric("🟠 Moderate",  f"{counts.get('Moderate', 0):,}",
+    c4.metric("🟠 Moderate",    f"{counts.get('Moderate', 0):,}",
               f"{100*counts.get('Moderate',0)/total:.1f}%")
-    c5.metric("🔴 Heavy",     f"{counts.get('Heavy', 0):,}",
+    c5.metric("🔴 Heavy",       f"{counts.get('Heavy', 0):,}",
               f"{100*counts.get('Heavy',0)/total:.1f}%")
-    c6.metric("🟣 Severe",    f"{counts.get('Severe', 0):,}",
+    c6.metric("🟣 Severe",      f"{counts.get('Severe', 0):,}",
               f"{100*counts.get('Severe',0)/total:.1f}%")
 
     st.divider()
@@ -378,16 +446,78 @@ if edges is not None:
     with map_col:
         st.subheader("🗺️ Congestion Map")
 
+        # ── Area Search ───────────────────────────────────────────────────────
+        st.markdown('<div class="search-container"><h4>🔍 Search Area</h4></div>',
+                    unsafe_allow_html=True)
+
+        search_cols = st.columns([5, 1])
+        with search_cols[0]:
+            search_input = st.text_input(
+                "search_input",
+                value=st.session_state.search_query,
+                placeholder="e.g. Katutura, Klein Windhoek, Pioneerspark...",
+                label_visibility="collapsed",
+            )
+        with search_cols[1]:
+            search_btn = st.button("Search", type="primary", use_container_width=True)
+
+        # Trigger search
+        if search_btn and search_input.strip():
+            st.session_state.search_query = search_input.strip()
+            results = geocode_location(search_input.strip())
+            st.session_state.search_results = results
+        elif "search_results" not in st.session_state:
+            st.session_state.search_results = []
+
+        # Show results and let user pick
+        results = st.session_state.get("search_results", [])
+        if results:
+            st.markdown("**Select a location to fly to:**")
+            for i, res in enumerate(results[:4]):
+                btn_label = f"📍 {res['name']}"
+                if st.button(btn_label, key=f"loc_{i}", use_container_width=True):
+                    st.session_state.map_center = [res["lat"], res["lon"]]
+                    st.session_state.map_zoom = 15
+                    st.session_state.search_results = []
+                    st.rerun()
+        elif search_btn and search_input.strip():
+            st.info("No locations found. Try a different name (e.g. 'Katutura', 'CBD').")
+
+        # Quick-jump chips for popular areas
+        st.markdown("**Quick jump:**")
+        areas = {
+            "🏙️ CBD":           [-22.5597, 17.0832, 15],
+            "🌿 Klein Windhoek": [-22.5502, 17.0985, 15],
+            "🏘️ Katutura":      [-22.5393, 17.0555, 14],
+            "🏫 Pioneerspark":   [-22.5812, 17.0741, 15],
+            "🏢 Olympia":        [-22.5664, 17.0901, 15],
+            "🌳 Eros":           [-22.5526, 17.0843, 15],
+        }
+        chip_cols = st.columns(3)
+        for idx, (label, coords) in enumerate(areas.items()):
+            with chip_cols[idx % 3]:
+                if st.button(label, key=f"chip_{idx}", use_container_width=True):
+                    st.session_state.map_center = [coords[0], coords[1]]
+                    st.session_state.map_zoom = coords[2]
+                    st.session_state.search_results = []
+                    st.rerun()
+
+        st.markdown("---")
+
+        # ── Build & render map ────────────────────────────────────────────────
         COLOR_MAP = {
-            "Free flow": "#16a34a",
-            "Light":     "#ca8a04",
-            "Moderate":  "#ea580c",
-            "Heavy":     "#dc2626",
-            "Severe":    "#9333ea",
+            "Free flow": "#22c55e",
+            "Light":     "#facc15",
+            "Moderate":  "#f97316",
+            "Heavy":     "#ef4444",
+            "Severe":    "#a855f7",
         }
 
-        m = folium.Map(location=[-22.5597, 17.0832], zoom_start=13,
-                       tiles="CartoDB positron")
+        m = folium.Map(
+            location=st.session_state.map_center,
+            zoom_start=st.session_state.map_zoom,
+            tiles="CartoDB dark_matter",
+        )
 
         for _, row in edges.iterrows():
             geom = row.get("geometry")
@@ -401,10 +531,10 @@ if edges is not None:
 
             popup_html = f"""
                 <div style="font-family:'Segoe UI',Arial;font-size:13px;min-width:190px;
-                            background:#ffffff;color:#0f172a;padding:12px 14px;
-                            border-radius:8px;border-top:3px solid #2563eb;">
-                <b style="color:#1d4ed8;font-size:14px;">{name}</b><br>
-                <hr style="border-color:#e2e8f0;margin:6px 0;">
+                            background:#2c1a0e;color:#f5e6d3;padding:12px 14px;border-radius:8px;
+                            border:1px solid #8b5e3c;">
+                <b style="color:#c49a6c;font-size:14px;">{name}</b><br>
+                <hr style="border-color:rgba(196,154,108,0.3);margin:6px 0;">
                 <b>Type:</b> {row.get('highway','N/A')}<br>
                 <b>Speed limit:</b> {row.get('speed_limit','N/A')} km/h<br>
                 <b>AM speed:</b> {row.get('speed_am',0):.1f} km/h<br>
@@ -418,18 +548,29 @@ if edges is not None:
                 popup=folium.Popup(popup_html, max_width=240),
             ).add_to(m)
 
+        # Add a marker if user jumped to a searched location
+        if st.session_state.map_zoom >= 15:
+            folium.CircleMarker(
+                location=st.session_state.map_center,
+                radius=10,
+                color="#c49a6c",
+                fill=True,
+                fill_color="#8b5e3c",
+                fill_opacity=0.7,
+                tooltip="📍 Selected area",
+            ).add_to(m)
+
         legend_html = """
         <div style="position:fixed;bottom:30px;left:30px;z-index:1000;
-                    background:#ffffff;padding:14px 18px;border-radius:10px;
-                    border:1px solid #e2e8f0;border-top:3px solid #2563eb;
-                    font-family:'Segoe UI',Arial;font-size:13px;color:#0f172a;
-                    box-shadow:0 4px 16px rgba(15,23,42,0.12);">
-            <b style="color:#1d4ed8;font-size:14px;">Congestion Level</b><br><br>
-            <span style='color:#16a34a;font-size:16px;'>&#9644;</span>&nbsp; Free flow<br>
-            <span style='color:#ca8a04;font-size:16px;'>&#9644;</span>&nbsp; Light<br>
-            <span style='color:#ea580c;font-size:16px;'>&#9644;</span>&nbsp; Moderate<br>
-            <span style='color:#dc2626;font-size:16px;'>&#9644;</span>&nbsp; Heavy<br>
-            <span style='color:#9333ea;font-size:16px;'>&#9644;</span>&nbsp; Severe
+                    background:#2c1a0e;padding:14px 18px;border-radius:10px;
+                    border:1px solid #8b5e3c;font-family:'Segoe UI',Arial;font-size:13px;
+                    color:#f5e6d3;box-shadow:0 4px 18px rgba(0,0,0,0.6);">
+            <b style="color:#c49a6c;font-size:14px;">Congestion Level</b><br><br>
+            <span style='color:#22c55e;font-size:16px;'>&#9644;</span>&nbsp; Free flow<br>
+            <span style='color:#facc15;font-size:16px;'>&#9644;</span>&nbsp; Light<br>
+            <span style='color:#f97316;font-size:16px;'>&#9644;</span>&nbsp; Moderate<br>
+            <span style='color:#ef4444;font-size:16px;'>&#9644;</span>&nbsp; Heavy<br>
+            <span style='color:#a855f7;font-size:16px;'>&#9644;</span>&nbsp; Severe
         </div>"""
         m.get_root().html.add_child(folium.Element(legend_html))
         st_folium(m, height=520, width="100%")
@@ -448,15 +589,14 @@ if edges is not None:
         )
         road_congestion.columns = ["Road type", "Avg congestion"]
         road_congestion["Avg congestion"] = road_congestion["Avg congestion"].round(3)
-        st.bar_chart(road_congestion.set_index("Road type"), height=240,
-                     color="#2563eb")
+        st.bar_chart(road_congestion.set_index("Road type"), height=240, color="#8b5e3c")
 
-        st.subheader("⏱️ AM vs PM Peak")
+        st.subheader("🌊 AM vs PM Peak")
         peak_df = pd.DataFrame({
             "AM Peak": [edges["congestion_am"].mean()],
             "PM Peak": [edges["congestion_pm"].mean()],
         })
-        st.bar_chart(peak_df, height=160, color=["#2563eb", "#1d4ed8"])
+        st.bar_chart(peak_df, height=160, color=["#8b5e3c", "#c49a6c"])
 
         st.subheader("📈 Severity Distribution")
         severity_order = ["Free flow", "Light", "Moderate", "Heavy", "Severe"]
@@ -468,7 +608,7 @@ if edges is not None:
             .reset_index()
         )
         sev_df.columns = ["Severity", "Count"]
-        st.bar_chart(sev_df.set_index("Severity"), height=200, color="#3b82f6")
+        st.bar_chart(sev_df.set_index("Severity"), height=200, color="#c49a6c")
 
     st.divider()
 
@@ -493,8 +633,8 @@ else:
     <div class="welcome-banner">
         <h2>Welcome to the Windhoek Traffic Dashboard</h2>
         <p>Use the sidebar to configure peak hours and click
-           <b style="color:#2563eb;">▶ Run Analysis</b>
-           to generate a live congestion map of Windhoek's road network.</p>
+           <b style="color:#c49a6c;">▶ Run Analysis</b>
+           to generate a live congestion map.</p>
     </div>
     """, unsafe_allow_html=True)
 
