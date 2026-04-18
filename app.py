@@ -1,4 +1,4 @@
-"""
+﻿"""
 Windhoek Traffic Congestion Dashboard
 ======================================
 Streamlit app that wraps the analysis pipeline with an interactive UI.
@@ -688,3 +688,4 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
